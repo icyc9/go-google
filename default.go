@@ -1,1 +1,1 @@
-package googlescraper
+package googlesearch
