@@ -16,7 +16,9 @@ const (
 
 type Client struct {
   Header http.Header
-  HTTPClient http.Client
+  HTTPClient *http.Client
+  transport *http.Transport
+  proxyURL *url.URL
 }
 
 type Query struct {
@@ -25,13 +27,18 @@ type Query struct {
 
 
 func NewClient() *Client {
-  client := new(Client)
+  client := &Client{
+    Header: http.Header{}, 
+    HTTPClient: &http.Client{},
+    transport:  &http.Transport{},
+  }
   return client
 }
 
+
 func (c *Client) SetProxy(proxy string) *Client {
   if pURL, err := url.Parse(proxy); err == nil {
-    c.HTTPClient.Transport = &http.Transport{Proxy: http.ProxyURL(pURL)}
+    c.proxyURL = pURL
   } else {
     log.Printf("ERROR [%v]", err)
   }
@@ -44,21 +51,27 @@ func (c *Client) SetHeader(header, value string) *Client {
   return c
 } 
 
-func (c *Client) GetSearchResults(query string) SearchResultList {
+func (c *Client) GetSearchResults(query string) (SearchResultList, error) {
   
   results := make([]SearchResult, Max_Results)
   
   if req, err := http.NewRequest("GET", createSearchURL(query), nil); err == nil {
     req.Header = c.Header
+    
+    if c.proxyURL != nil {
+      c.transport.Proxy = http.ProxyURL(c.proxyURL)
+    }
+
+    c.HTTPClient.Transport = c.transport
+
     resp, err := c.HTTPClient.Do(req)
-    defer resp.Body.Close()
 
     if err != nil {
-      log.Println("ERROR [%v]", err)
+      return SearchResultList{}, err
     }
 
     if document, err := goquery.NewDocumentFromResponse(resp); err != nil {
-      log.Printf("ERROR [%v]", err)
+      return SearchResultList{}, err
     } else {
       
       document.Find("div.g").Each(func(i int, s *goquery.Selection) {
@@ -72,10 +85,10 @@ func (c *Client) GetSearchResults(query string) SearchResultList {
 
     }
   } else {
-    log.Printf("ERROR [%v]", err)
+    return SearchResultList{}, err
   }
 
-  return SearchResultList{results}
+  return SearchResultList{results}, nil
 }
 
 func createSearchURL(search string) string {
