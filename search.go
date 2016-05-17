@@ -6,7 +6,7 @@ type SearchResult struct {
 }
 
 type SearchResultList struct {
-  Object []SearchResult
+  List []SearchResult
 }
 
 func (self *SearchResult) GetDescription() string {
