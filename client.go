@@ -53,40 +53,40 @@ func (c *Client) SetHeader(header, value string) *Client {
 
 func (c *Client) GetSearchResults(query string) (SearchResultList, error) {
   
-  results := make([]SearchResult, Max_Results)
-  
-  if req, err := http.NewRequest("GET", createSearchURL(query), nil); err == nil {
-    req.Header = c.Header
+  results := make([]SearchResult, 0, Max_Results)
+
+  req, _ := http.NewRequest("GET", createSearchURL(query), nil)
+  req.Header = c.Header
     
-    if c.proxyURL != nil {
-      c.transport.Proxy = http.ProxyURL(c.proxyURL)
-    }
+  if c.proxyURL != nil {
+    c.transport.Proxy = http.ProxyURL(c.proxyURL)
+  }
 
-    c.HTTPClient.Transport = c.transport
+  c.HTTPClient.Transport = c.transport
+  resp, err := c.HTTPClient.Do(req)
 
-    resp, err := c.HTTPClient.Do(req)
-
-    if err != nil {
-      return SearchResultList{}, err
-    }
-
-    if document, err := goquery.NewDocumentFromResponse(resp); err != nil {
-      return SearchResultList{}, err
-    } else {
-      
-      document.Find("div.g").Each(func(i int, s *goquery.Selection) {
-        result_link, exists := s.Find(".r").Find("a").Attr("href")
-        result_description := s.Find(".s").Find(".st").Text()
-        
-        if exists {
-          results[i] = SearchResult{result_description, result_link}
-        }
-      })
-
-    }
-  } else {
+  if err != nil {
     return SearchResultList{}, err
   }
+
+  document, err := goquery.NewDocumentFromResponse(resp)
+
+  if err != nil {
+    return SearchResultList{}, err
+  }
+  
+  document.Find("div.g").Each(func(i int, s *goquery.Selection) {
+    if i >= Max_Results - 1 {
+      return
+    }
+
+    result_link, exists := s.Find(".r").Find("a").Attr("href")
+    result_description := s.Find(".s").Find(".st").Text()
+    
+    if exists {
+      results = append(results, SearchResult{result_description, result_link})
+    }
+  })
 
   return SearchResultList{results}, nil
 }
