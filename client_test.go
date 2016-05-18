@@ -13,11 +13,11 @@ func TestSetProxy(t *testing.T) {
 
 func TestGetSearchResults(t *testing.T) {
   client := NewClient()
-  results, err := client.GetSearchResults("golang")
+  google_response, err := client.GetSearchResults("golang")
   assert.Equal(t, err, nil)
 
-  for result := range results.List {
-    current_result := results.List[result]
+  for result := range google_response.Results {
+    current_result := google_response.Results[result]
     assert.NotNil(t, current_result.Description)
     assert.NotNil(t, current_result.Link)
   }

@@ -51,7 +51,7 @@ func (c *Client) SetHeader(header, value string) *Client {
   return c
 } 
 
-func (c *Client) GetSearchResults(query string) (SearchResultList, error) {
+func (c *Client) GetSearchResults(query string) (GoogleResults, error) {
   
   results := make([]SearchResult, 0, Max_Results)
 
@@ -66,13 +66,13 @@ func (c *Client) GetSearchResults(query string) (SearchResultList, error) {
   resp, err := c.HTTPClient.Do(req)
 
   if err != nil {
-    return SearchResultList{}, err
+    return GoogleResults{}, err
   }
 
   document, err := goquery.NewDocumentFromResponse(resp)
 
   if err != nil {
-    return SearchResultList{}, err
+    return GoogleResults{}, err
   }
   
   document.Find("div.g").Each(func(i int, s *goquery.Selection) {
@@ -88,7 +88,7 @@ func (c *Client) GetSearchResults(query string) (SearchResultList, error) {
     }
   })
 
-  return SearchResultList{results}, nil
+  return GoogleResults{results}, nil
 }
 
 func createSearchURL(search string) string {

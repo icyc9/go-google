@@ -5,8 +5,8 @@ type SearchResult struct {
   Link string
 }
 
-type SearchResultList struct {
-  List []SearchResult
+type GoogleResults struct {
+  Results []SearchResult
 }
 
 func (self *SearchResult) GetDescription() string {
